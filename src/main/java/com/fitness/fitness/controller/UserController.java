@@ -26,9 +26,13 @@ import org.springframework.web.multipart.MultipartFile;
 @SessionAttributes("user")
 public class UserController {
     
-    @Autowired
+    
     private UserService userService;
-
+    @Autowired
+    public UserController(UserService userService) {
+        this.userService = userService;
+    }
+    
     @GetMapping("/first_page")
     public String firstPage(Model model){
 
@@ -44,7 +48,7 @@ public class UserController {
     public String registerUser(@ModelAttribute User user, HttpSession session) {
         if (userService.verifyUser(user)) {
             if(userService.emailValid(user.getEmail()) && userService.passwordValid(user.getPassword())){
-                userService.saveUser(user); 
+                userService.saveUser(user);
                 session.setAttribute("user", user);
                 return "home";
             }
@@ -69,26 +73,42 @@ public class UserController {
     }
 
     @GetMapping("/forget_password")
-    public String userForgetPassword(Model model){
-        User existingUser = new User();
-        model.addAttribute("user", existingUser);
+    public String userForgetPassword(Model model, User user){ // existinguser masuk ke model dgn nama "user"
         return "forgetPassword";
     }
     
  
     @PostMapping("/forget_password")
-    public String userEnterCode(@ModelAttribute User user, Model model){
-        if (userService.userRecoveryCode(user) && userService.newPassword(user)) {
-            userService.saveUser(user);
-            return "sign";
+    public String processPasswordReset(Model model, @ModelAttribute User user) {
+        User retrievedUser = userService.getUserByEmail(user.getEmail());
+        if (retrievedUser == null) {
+            model.addAttribute("error", "No user found with the provided email");
+            return "forgetPassword";
         }
         
-        model.addAttribute("error", "Invalid recovery code or password");
-        return "forgetpassword";
-    }
+        if (!userService.userRecoveryCode(retrievedUser)) {
+            model.addAttribute("error", "Invalid recovery code");
+            return "forgetPassword";
+        }
     
+        if (userService.isNewPasswordDifferent(user, retrievedUser)) {
+            model.addAttribute("error", "The new password must be different from the current password");
+            return "forgetPassword";
+        }
+
+        if (!userService.passwordValid(user.getPassword())) {
+            model.addAttribute("error", "The new password must be at least 8 characters long and include at least one uppercase letter and one number");
+            return "forgetPassword";
+        }
+    
+        // Update password and clear recovery code
+        retrievedUser.setPassword(user.getPassword());
+        userService.saveUser(retrievedUser);
+    
+        return "sign"; // Redirect to the login page or confirmation page
+    }
     @GetMapping("/profile")
-    public String userProfile(Model model, @SessionAttribute("user") User user) {
+    public String userProfile(Model model, @SessionAttribute("user") User user) { // user in User user hold attribute from session attribute "user" atau itu masuk ke User user
         User retrievedUser = userService.getUserByEmail(user.getEmail());
         if (retrievedUser != null) {
             model.addAttribute("user", retrievedUser);
@@ -101,8 +121,7 @@ public class UserController {
 
     @GetMapping("/edit_profile")
     public String userEditInformation(Model model, @SessionAttribute("user") User user) {
-        String userEmail = user.getEmail();
-        User existingUser = userService.getUserByEmail(userEmail);
+        User existingUser = userService.getUserByEmail(user.getEmail());
         model.addAttribute("user", existingUser);
         return "editProfile";
     }
@@ -110,7 +129,7 @@ public class UserController {
     @PostMapping("/edit_profile")
     public String userEditInformation(@ModelAttribute User user, Model model) {
         userService.saveUser(user);
-        return "editProfile"; // Redirect to the profile page after saving
+        return "editProfile";
 }
 
     @GetMapping("/add_credit_card")
@@ -135,31 +154,69 @@ public class UserController {
             return "login";
         }
 }
-    @GetMapping("/upload_profile_picture")
-    public String showProfilePictureUploadForm(Model model, @SessionAttribute("user") User user) {
+@GetMapping("/reset_password")
+public String showResetPasswordForm(Model model, HttpSession session) {
+    User user = (User) session.getAttribute("user");
+    if (user == null) {
+        return "/user_signin";
+    }
     model.addAttribute("user", user);
+    return "resetPassword";
+}
+
+@PostMapping("/reset_password")
+public String resetPassword(@RequestParam("currentPassword") String password,
+                            @RequestParam("newPassword") String newPassword,
+                            @RequestParam("confirmPassword") String confirmPassword,
+                            HttpSession session, Model model) {
+    User user = (User) session.getAttribute("user");
+    if (user == null) {
+        return "redirect:/user_signin";
+    }
+
+    if (!newPassword.equals(confirmPassword)) {
+        model.addAttribute("error", "New password and confirmation do not match.");
+        return "resetPassword";
+    }
+    if (password.equals(newPassword)) {
+        model.addAttribute("error", "New password cannot be the same as the current password.");
+        return "resetPassword";
+    }
+
+    if (userService.resetPassword(user.getEmail(), password, newPassword)) {
+        session.invalidate(); 
+        return "redirect:/user_signin";
+    } else {
+        model.addAttribute("error", "Password reset failed. Please check your current password.");
+        return "resetPassword";
+    }
+}
+
+@GetMapping("/choose_profile_picture")
+public String chooseProfilePicture(Model model) {
+    model.addAttribute("avatar2", "avatar2.jpg");
+    model.addAttribute("avatar3", "avatar3.jpg");
     return "profilePicture";
 }
 
-    @PostMapping("/upload_profile_picture")
-    public String uploadProfilePicture(@RequestParam("file") MultipartFile file, @SessionAttribute("user") User user) {
-        if (!file.isEmpty()) {
-            try {
-                String fileName = file.getOriginalFilename();
-                String filePath = Paths.get("uploads", fileName).toString();
-                Files.copy(file.getInputStream(), Paths.get(filePath), StandardCopyOption.REPLACE_EXISTING);
-                
-                String profilePictureUrl = "/uploads/" + fileName; // Adjust this URL as needed
-                
-                userService.setProfilePicture(user.getEmail(), profilePictureUrl);
-                
-                return "redirect:/profile";
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-        return "profile";
+@PostMapping("/save_profile_picture")
+public String saveProfilePicture(@RequestParam("avatar") String avatar, HttpSession session) {
+    User user = (User) session.getAttribute("user");
+    if (user != null) {
+        user.setImage(avatar);
+        userService.saveUserProfile(user);
     }
+    return "editProfile";
+}
 
-
+@PostMapping("/remove_profile_picture")
+public String removeProfilePicture(HttpSession session) {
+    User user = (User) session.getAttribute("user");
+    if (user != null) {
+        user.setImage("avatar1.jpg");
+        userService.saveUserProfile(user);
     }
+    return "editProfile";
+}
+
+}

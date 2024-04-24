@@ -35,13 +35,10 @@ public class UserService {
         }
         return false;
     }
-
-    public boolean newPassword(User user) {
-        User u = userRepo.findByEmail(user.getEmail());
-        if (u != null && !u.getPassword().equals(user.getPassword())) {
-            return true;
-        }
-        return false;
+    
+    public boolean isNewPasswordDifferent(User user, User retrievedUser) {
+        // Check that the new password is indeed different from the existing one
+        return retrievedUser.getPassword().equals(user.getPassword());
     }
 
     public void updatePasswordByEmail(String email, String newPassword) {
@@ -91,16 +88,30 @@ public class UserService {
         userRepo.save(user);
     }
 
-    public String setProfilePicture(String email, String profilePictureUrl) {
+    public boolean resetPassword(String email, String password, String newPassword) {
+        if (newPassword.equals(password)) {
+            return false;
+        }
+    
         User user = userRepo.findByEmail(email);
-        user.setProfilePictureUrl(profilePictureUrl);
-        userRepo.save(user);
-        return profilePictureUrl;
+        if (user != null && user.getPassword().equals(password)) {
+            user.setPassword(newPassword);
+            userRepo.save(user);
+            return true;
+        }
+        return false;
+    }
+
+    public boolean validateResetPasswordForm(String password, String newPassword, String confirmPassword) {
+        return password.length() >= 8 && newPassword.length() >= 8 &&
+               containsUppercaseLetterAndNumber(newPassword) && newPassword.equals(confirmPassword);
     }
     
-    public String getProfilePicture(String email) {
-        User user = userRepo.findByEmail(email);
-        return user.getProfilePictureUrl();
+    public User saveUserProfile(User user) {
+        if (user.getImage() == null || user.getImage().isEmpty()) {
+            user.setImage("avatar1.jpg");
+        }
+        return userRepo.save(user);
     }
     
 }

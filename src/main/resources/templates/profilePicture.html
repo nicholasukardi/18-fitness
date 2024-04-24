@@ -1,19 +1,43 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Upload Profile Picture</title>
+    <title>Choose Profile Picture</title>
+    <style>
+        /* Adding basic styling for images and form */
+        .image-button {
+            border: none;
+            background: none;
+            padding: 0;
+        }
+
+        .image-button img {
+            width: 100px; /* Adjust size as needed */
+            height: auto;
+            cursor: pointer;
+        }
+    </style>
 </head>
 <body>
-    <h1>Upload Profile Picture</h1>
-    <form method="POST" action="/upload_profile_picture" enctype="multipart/form-data">
-        <input type="file" name="file" accept="image/*" required>
-        <button type="submit">Upload</button>
+    <h1>Choose Profile Picture</h1>
+
+    <!-- Form for avatar2.jpg -->
+    <form method="POST" action="/save_profile_picture">
+        <button class="image-button" type="submit" name="avatar" value="avatar2.jpg">
+            <img src="/images/avatar2.jpg" alt="Avatar 2">
+        </button>
     </form>
-    
-    <form method="GET" action="/profile">
-        <a th:href="@{/profile}"><button>Go Back</button></a>
+
+    <!-- Form for avatar3.jpg -->
+    <form method="POST" action="/save_profile_picture">
+        <button class="image-button" type="submit" name="avatar" value="avatar3.jpg">
+            <img src="/images/avatar3.jpg" alt="Avatar 3">
+        </button>
+    </form>
+
+    <form method="GET" action="/edit_profile">
+        <button>Cancel</button>
     </form>
 </body>
 </html>
