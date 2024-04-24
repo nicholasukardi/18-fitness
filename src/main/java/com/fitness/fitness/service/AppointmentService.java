@@ -1,20 +1,15 @@
 package com.fitness.fitness.service;
 
-import java.util.ArrayList;
-import java.util.Date;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
 import com.fitness.fitness.model.Appointment;
-import com.fitness.fitness.model.FitnessClass;
-import com.fitness.fitness.model.Trainer;
 import com.fitness.fitness.repository.AppointmentRepo;
-import com.fitness.fitness.repository.FitnessClassRepo;
-import com.fitness.fitness.repository.TrainerRepo;
+
+import jakarta.transaction.Transactional;
+
 
 @Service
 public class AppointmentService {
@@ -43,8 +38,33 @@ public class AppointmentService {
         return appointmentRepo.findClassNameByAppointmentId(appointmentId);
     }
 
-    public Date getDateByAppointmentId(int appointmentId) {
-        return appointmentRepo.findDateByAppointmentId(appointmentId);
+    public LocalDateTime getDateTimeByAppointmentId(int appointmentId) {
+        return appointmentRepo.findDateTimeByAppointmentId(appointmentId);
+    }
+
+    public String getStatusByAppointmentId(int appointmentId){
+        return appointmentRepo.findStatusByappointmentId(appointmentId);
+    }
+
+    public int getUserIdByAppointmentId(int appointmentId) {
+    Appointment appointment = appointmentRepo.findById(appointmentId).orElseThrow();
+    return appointment.getUser().getUserId();
+    }
+
+    public int deactivatePastAppointments() {
+    LocalDateTime currentDateTime = LocalDateTime.now();
+    return appointmentRepo.updateStatusForPastAppointments(currentDateTime);
+    }
+
+    @Transactional
+    public void updateAppointment(Appointment appointment) {
+            appointmentRepo.save(appointment); // save method handles both insert and update
+
+}
+//its the same as the update appointment above but this one i just create a separate method to make it more separate and clear - herman
+    @Transactional
+    public void saveAppointment(Appointment appointment) {
+        appointmentRepo.save(appointment);
     }
 
 }

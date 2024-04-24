@@ -1,19 +1,26 @@
 package com.fitness.fitness.service;
 
+import java.time.LocalDate;
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.fitness.fitness.model.User;
 import com.fitness.fitness.repository.UserRepo;
 
+
 @Service
 public class UserService {
-    
+    @Autowired
     private UserRepo userRepo;
     // i use constructor injection instead of field injection to avoid difficulties in testing
-    @Autowired
+    
     public UserService(UserRepo userRepo){
         this.userRepo = userRepo;
+    }
+    public List<User> getAllUsers(){
+        return userRepo.findAll();
     }
 
     public User saveUser(User user){
@@ -87,31 +94,39 @@ public class UserService {
         user.setCardNumber(cardNumber);
         userRepo.save(user);
     }
-
-    public boolean resetPassword(String email, String password, String newPassword) {
-        if (newPassword.equals(password)) {
-            return false;
-        }
-    
+    public void setStatus(String email, String status){
         User user = userRepo.findByEmail(email);
-        if (user != null && user.getPassword().equals(password)) {
-            user.setPassword(newPassword);
-            userRepo.save(user);
-            return true;
-        }
-        return false;
+        user.setStatus(status);
+        userRepo.save(user);
     }
 
-    public boolean validateResetPasswordForm(String password, String newPassword, String confirmPassword) {
-        return password.length() >= 8 && newPassword.length() >= 8 &&
-               containsUppercaseLetterAndNumber(newPassword) && newPassword.equals(confirmPassword);
-    }
+    // public String setProfilePicture(String email, String image) {
+    //     User user = userRepo.findByEmail(email);
+    //     user.setimage(image);
+    //     userRepo.save(user);
+    //     return image;
+    // }
     
-    public User saveUserProfile(User user) {
-        if (user.getImage() == null || user.getImage().isEmpty()) {
-            user.setImage("avatar1.jpg");
-        }
-        return userRepo.save(user);
-    }
     
+    // public String getProfilePicture(String email) {
+    //     User user = userRepo.findByEmail(email);
+    //     return user.getProfilePictureUrl();
+    // }
+
+    public void updateExpiredUsersStatus() {
+        LocalDate today = LocalDate.now();
+        int updatedCount = userRepo.updateExpiredUsers(today);
+        System.out.println(updatedCount + " users have been updated to 'Inactive'.");
+    }
+    public User getUserById(int userId) {
+        // Use the userRepository to find the user by ID
+        return userRepo.findById(userId).orElse(null);
+}
+
+public User saveUserProfile(User user) {
+    if (user.getImage() == null || user.getImage().isEmpty()) {
+        user.setImage("avatar1.jpg");
+    }
+    return userRepo.save(user);
+}
 }

@@ -4,6 +4,8 @@ package com.fitness.fitness.model;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
@@ -66,6 +68,11 @@ public class FitnessClass {
 
     public void setClassDuration(String classDuration) {
         this.classDuration = classDuration;
+    }
+
+    public void getFitnessClassId(int classId2) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getFitnessClassId'");
     }
 }
 

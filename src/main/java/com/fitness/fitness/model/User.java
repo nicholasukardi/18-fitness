@@ -1,6 +1,6 @@
 package com.fitness.fitness.model;
 
-import java.util.ArrayList;
+import java.time.LocalDate;
 import java.util.Date;
 import java.util.List;
 
@@ -12,14 +12,17 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.OneToOne;
 
 @Entity
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int userId;
-    private String name;
+    private String name; 
     private String username;
     private String password;
     private String email;
@@ -27,10 +30,11 @@ public class User {
     private Date dob;
     private String phoneNumber;
     private String status = "Inactive"; // Plan type or Paused or Inactive
-    private Date activeDate = null;
+    private LocalDate activeDate = null;
     private int recoveryCode;
     private String cardNumber;
     private String image;
+    private String gender;
     
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Appointment> appointments;
@@ -38,8 +42,9 @@ public class User {
     public User() {
     }
 
+
     public User(int userId, String name, String username, String password, String email, Date dob, String phoneNumber,
-            String status, Date activeDate, int recoveryCode, String cardNumber, String image) {
+            String status, LocalDate activeDate, int recoveryCode, String cardNumber, String image) {
         this.userId = userId;
         this.name = name;
         this.username = username;
@@ -110,10 +115,10 @@ public class User {
     public void setStatus(String status) {
         this.status = status;
     }
-    public Date getActiveDate(){
+    public LocalDate getActiveDate(){
         return activeDate;
     }
-    public void setActiveDate(Date activeDate){
+    public void setActiveDate(LocalDate activeDate){
         this.activeDate = activeDate;
     }
     public String getCardNumber() {
@@ -124,20 +129,21 @@ public class User {
         this.cardNumber = cardNumber;
     }
 
-    public String getImage(){
+    public String getImage() {
         return image;
     }
-
-    public void setImage(String image){
+    
+    public void setImage(String image) {
         this.image = image;
     }
 
-    public List<Appointment> getAppointments() {
-        return appointments;
-    }
 
-    public void setAppointments(List<Appointment> appointments) {
-        this.appointments = appointments;
+    @Override
+    public String toString() {
+        return "User [userId=" + userId + ", name=" + name + ", username=" + username + ", password=" + password
+                + ", email=" + email + ", dob=" + dob + ", phoneNumber=" + phoneNumber + ", status=" + status
+                + ", activeDate=" + activeDate + ", recoveryCode=" + recoveryCode + ", cardNumber=" + cardNumber
+                + ", image=" + image + ", gender=" + gender + ", appointments=" + appointments + "]";
     }
     
 }
